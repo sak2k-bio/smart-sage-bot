@@ -18,10 +18,26 @@ export default {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
+        "background-secondary": "hsl(var(--background-secondary))",
         foreground: "hsl(var(--foreground))",
+        "chat-bubble": "hsl(var(--chat-bubble))",
+        "chat-bubble-ai": "hsl(var(--chat-bubble-ai))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
+          light: "hsl(var(--primary-light))",
           foreground: "hsl(var(--primary-foreground))",
+        },
+        "quiz-mode": {
+          DEFAULT: "hsl(var(--quiz-mode))",
+          light: "hsl(var(--quiz-mode-light))",
+        },
+        "tutor-mode": {
+          DEFAULT: "hsl(var(--tutor-mode))",
+          light: "hsl(var(--tutor-mode-light))",
+        },
+        "suggestions-mode": {
+          DEFAULT: "hsl(var(--suggestions-mode))",
+          light: "hsl(var(--suggestions-mode-light))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -57,6 +73,22 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      backgroundImage: {
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-quiz": "var(--gradient-quiz)",
+        "gradient-tutor": "var(--gradient-tutor)",
+        "gradient-suggestions": "var(--gradient-suggestions)",
+        "gradient-background": "var(--gradient-background)",
+      },
+      boxShadow: {
+        soft: "var(--shadow-soft)",
+        chat: "var(--shadow-chat)",
+        mode: "var(--shadow-mode)",
+      },
+      transitionTimingFunction: {
+        smooth: "var(--transition-smooth)",
+        bounce: "var(--transition-bounce)",
       },
       borderRadius: {
         lg: "var(--radius)",
