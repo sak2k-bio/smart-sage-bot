@@ -108,30 +108,30 @@ export const ChatInterface = () => {
     return (
       <div
         key={message.id}
-        className={`flex items-start gap-3 mb-4 ${
+        className={`flex items-start gap-4 mb-6 animate-fade-in ${
           message.isUser ? 'justify-end' : 'justify-start'
         }`}
       >
         {!message.isUser && (
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center shadow-soft">
-            <Bot className="h-4 w-4 text-primary-foreground" />
+          <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-elegant">
+            <Bot className="h-5 w-5 text-primary-foreground" />
           </div>
         )}
         
-        <Card className={`max-w-[80%] p-4 shadow-chat transition-smooth ${
+        <Card className={`max-w-[80%] p-5 shadow-elegant transition-spring hover:shadow-mode rounded-2xl ${
           message.isUser 
-            ? 'bg-gradient-primary text-primary-foreground' 
-            : 'bg-chat-bubble border'
+            ? 'bg-gradient-primary text-primary-foreground border-0' 
+            : 'bg-chat-bubble/80 backdrop-blur-sm border border-border/50'
         }`}>
-          <p className="text-sm leading-relaxed">{message.content}</p>
-          <span className="text-xs opacity-70 mt-2 block">
+          <p className="text-sm leading-relaxed font-inter">{message.content}</p>
+          <span className="text-xs opacity-60 mt-3 block font-medium">
             {message.timestamp.toLocaleTimeString()}
           </span>
         </Card>
 
         {message.isUser && (
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-            <User className="h-4 w-4 text-muted-foreground" />
+          <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-muted/80 backdrop-blur-sm flex items-center justify-center shadow-soft">
+            <User className="h-5 w-5 text-muted-foreground" />
           </div>
         )}
       </div>
@@ -153,17 +153,17 @@ export const ChatInterface = () => {
       
       <div className="relative z-10 max-w-4xl mx-auto p-4 h-screen flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 p-4 bg-card/50 backdrop-blur-md rounded-lg border shadow-soft">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center shadow-mode">
-              <Bot className="h-5 w-5 text-primary-foreground" />
+        <div className="flex items-center justify-between mb-6 p-6 bg-card/60 backdrop-blur-xl rounded-2xl border shadow-elegant animate-slide-up">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-mode animate-glow">
+              <Bot className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold">RAG Assistant</h1>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className={`text-xs ${getModeColor(currentMode)}`}>
+              <h1 className="text-2xl font-semibold font-inter tracking-tight">RAG Assistant</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="secondary" className={`text-sm font-medium ${getModeColor(currentMode)} shadow-soft`}>
                   {getModeIcon(currentMode)}
-                  <span className="ml-1 capitalize">{currentMode} Mode</span>
+                  <span className="ml-2 capitalize">{currentMode} Mode</span>
                 </Badge>
               </div>
             </div>
@@ -173,9 +173,9 @@ export const ChatInterface = () => {
             variant="ghost"
             size="icon"
             onClick={() => setShowSettings(!showSettings)}
-            className="hover:bg-accent transition-smooth"
+            className="hover:bg-accent transition-spring rounded-xl h-12 w-12"
           >
-            <Settings className="h-5 w-5" />
+            <Settings className="h-6 w-6" />
           </Button>
         </div>
 
@@ -196,21 +196,21 @@ export const ChatInterface = () => {
         </div>
 
         {/* Input Area */}
-        <Card className="p-4 bg-card/90 backdrop-blur-md border shadow-soft">
-          <div className="flex gap-3 items-center">
+        <Card className="p-6 bg-card/80 backdrop-blur-xl border shadow-elegant rounded-2xl animate-slide-up">
+          <div className="flex gap-4 items-center">
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={`Ask something in ${currentMode} mode...`}
-              className="flex-1 bg-background/50 border-border focus:ring-2 focus:ring-primary/20 transition-smooth"
+              className="flex-1 bg-background/60 backdrop-blur-sm border-border/50 focus:ring-2 focus:ring-primary/30 transition-spring rounded-xl h-12 px-4 font-inter"
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
             />
             <Button
               onClick={handleSendMessage}
-              className={`${getModeColor(currentMode)} hover:opacity-90 transition-smooth shadow-soft`}
+              className={`${getModeColor(currentMode)} hover:opacity-90 transition-spring shadow-elegant h-12 w-12 rounded-xl`}
               size="icon"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             </Button>
           </div>
         </Card>
