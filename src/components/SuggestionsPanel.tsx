@@ -3,40 +3,60 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Lightbulb, Sparkles, ArrowRight, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
+import { SuggestionsData } from '@/lib/api';
 
 interface SuggestionsPanelProps {
   content: string;
+  suggestions?: SuggestionsData;
 }
 
-export const SuggestionsPanel = ({ content }: SuggestionsPanelProps) => {
+export const SuggestionsPanel = ({ content, suggestions }: SuggestionsPanelProps) => {
   const [refreshCount, setRefreshCount] = useState(0);
 
-  const suggestionCategories = [
+  // Use real suggestions or fall back to defaults
+  const suggestionCategories = suggestions ? [
+    {
+      title: "Creative Applications",
+      color: "bg-gradient-suggestions",
+      suggestions: suggestions.creativeApplications || []
+    },
+    {
+      title: "Learning & Education",
+      color: "bg-purple-500",
+      suggestions: suggestions.learningEducation || []
+    },
+    {
+      title: "Business Solutions", 
+      color: "bg-blue-500",
+      suggestions: suggestions.businessSolutions || []
+    }
+  ] : [
+    // Fallback suggestions if no data provided
     {
       title: "Creative Applications",
       color: "bg-gradient-suggestions",
       suggestions: [
-        "Build a RAG-powered content creation assistant for writers",
-        "Create an interactive storytelling app with dynamic plot generation",
-        "Develop a personalized recipe generator based on dietary preferences"
+        "Analyzing creative applications...",
+        "Generating innovative ideas...",
+        "Processing context for suggestions..."
       ]
     },
     {
       title: "Learning & Education",
       color: "bg-purple-500",
       suggestions: [
-        "Design an adaptive learning platform that adjusts to student progress",
-        "Create virtual study groups with AI-powered discussion facilitation",
-        "Build a language learning companion with cultural context integration"
+        "Exploring educational applications...",
+        "Generating learning strategies...",
+        "Creating educational content ideas..."
       ]
     },
     {
       title: "Business Solutions", 
       color: "bg-blue-500",
       suggestions: [
-        "Develop an intelligent customer support system with context awareness",
-        "Create a market research assistant that analyzes trends and patterns",
-        "Build a document analysis tool for legal or medical applications"
+        "Analyzing business applications...",
+        "Generating professional use cases...",
+        "Creating business solutions..."
       ]
     }
   ];
@@ -106,8 +126,8 @@ export const SuggestionsPanel = ({ content }: SuggestionsPanelProps) => {
             <div>
               <h4 className="font-medium text-sm mb-1 text-accent-foreground">Pro Tip</h4>
               <p className="text-xs text-accent-foreground/80 leading-relaxed">
-                Combine different suggestion categories to create unique, innovative solutions. 
-                The best ideas often come from unexpected connections between different domains.
+                {suggestions?.proTip || 
+                  'Combine different suggestion categories to create unique, innovative solutions. The best ideas often come from unexpected connections between different domains.'}
               </p>
             </div>
           </div>

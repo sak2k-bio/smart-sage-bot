@@ -47,7 +47,42 @@ class AutoPipeline extends BasePipeline { constructor(){super('AUTO: AI Selects 
   return { answer: res.answer, thinkingSteps: steps, pipelineInfo: `${this.name} → ${selected.name}`, sources: res.sources||[] }
 }}
 
-class QuizPipeline extends BasePipeline { constructor(){super('Quiz Generation Pipeline')} async process(query:string, options:any={}){ const steps:any=[]; const qa=new QueryAgent(); const q=await qa.process({query}); steps.push(...q.thinkingSteps); const r=new RetrievalAgent(); const rr=await r.process({query:q.processedQuery,k:options.documentCount||10}); steps.push(...rr.thinkingSteps); const quiz=new QuizAgent(); const qr=await quiz.process({ topic: options.topic||q.processedQuery, documents: rr.documents, difficulty: options.difficulty||'medium', questionCount: options.questionCount||5 }); steps.push(...qr.thinkingSteps); return { questions: qr.questions, thinkingSteps: steps, pipelineInfo: this.name, sources: rr.documents, metadata: { topic: options.topic||q.processedQuery, difficulty: options.difficulty||'medium', questionCount: qr.questions.length } } }}
+class QuizPipeline extends BasePipeline { 
+  constructor(){super('Quiz Generation Pipeline')} 
+  async process(query:string, options:any={}){ 
+    const steps:any=[]; 
+    const qa=new QueryAgent(); 
+    const q=await qa.process({query}); 
+    steps.push(...q.thinkingSteps); 
+    const r=new RetrievalAgent(); 
+    const rr=await r.process({query:q.processedQuery,k:options.documentCount||15}); // Get more docs for variety
+    steps.push(...rr.thinkingSteps); 
+    
+    // Shuffle documents to ensure variety in questions
+    const shuffledDocs = [...rr.documents].sort(() => Math.random() - 0.5);
+    console.log(`[QuizPipeline] Retrieved ${rr.documents.length} documents, shuffling for variety`);
+    
+    const quiz=new QuizAgent(); 
+    const qr=await quiz.process({ 
+      topic: options.topic||q.processedQuery, 
+      documents: shuffledDocs, 
+      difficulty: options.difficulty||'medium', 
+      questionCount: options.questionCount||5 
+    }); 
+    steps.push(...qr.thinkingSteps); 
+    return { 
+      questions: qr.questions, 
+      thinkingSteps: steps, 
+      pipelineInfo: this.name, 
+      sources: rr.documents.slice(0, 5), // Show only first 5 sources 
+      metadata: { 
+        topic: options.topic||q.processedQuery, 
+        difficulty: options.difficulty||'medium', 
+        questionCount: qr.questions.length 
+      } 
+    } 
+  }
+}
 class TutorPipeline extends BasePipeline { constructor(){super('Tutoring Pipeline')} async process(query:string, options:any={}){ const steps:any=[]; const qa=new QueryAgent(); const q=await qa.process({query}); steps.push(...q.thinkingSteps); const r=new RetrievalAgent(); const rr=await r.process({query:q.processedQuery,k:options.documentCount||8}); steps.push(...rr.thinkingSteps); const tutor=new TutorAgent(); const tr=await tutor.process({ topic: options.topic||q.processedQuery, documents: rr.documents, userLevel: options.userLevel||'intermediate', learningStyle: options.learningStyle||'reading' }); steps.push(...tr.thinkingSteps); return { tutorialSections: tr.tutorialSections, thinkingSteps: steps, pipelineInfo: this.name, sources: rr.documents, metadata: { topic: options.topic||q.processedQuery, userLevel: options.userLevel||'intermediate', sectionCount: tr.tutorialSections.length } } }}
 class SuggestionsPipeline extends BasePipeline { constructor(){super('Suggestions Pipeline')} async process(query:string, options:any={}){ const steps:any=[]; const qa=new QueryAgent(); const q=await qa.process({query}); steps.push(...q.thinkingSteps); let documents:any[]=[]; if(q.needsRetrieval && options.useContext !== false){ const r=new RetrievalAgent(); const rr=await r.process({query:q.processedQuery,k:options.documentCount||5}); steps.push(...rr.thinkingSteps); documents=rr.documents; } const suggest=new SuggestionsAgent(); const sr=await suggest.process({ topic: options.topic||q.processedQuery, query: q.processedQuery, documents, creativity: options.creativity||'balanced' }); steps.push(...sr.thinkingSteps); return { suggestions: sr.suggestions, thinkingSteps: steps, pipelineInfo: this.name, sources: documents, metadata: { topic: options.topic||q.processedQuery, creativity: options.creativity||'balanced', hasContext: documents.length > 0 } } }}
 

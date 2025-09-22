@@ -79,6 +79,27 @@ export interface TutorResponse {
   error?: string;
 }
 
+export interface SuggestionsData {
+  creativeApplications: string[];
+  learningEducation: string[];
+  businessSolutions: string[];
+  proTip: string;
+}
+
+export interface SuggestionsResponse {
+  success: boolean;
+  suggestions?: SuggestionsData;
+  thinkingSteps?: ThinkingStep[];
+  pipelineInfo?: string;
+  sources?: DocumentSource[];
+  metadata?: {
+    topic: string;
+    creativity: string;
+    hasContext: boolean;
+  };
+  error?: string;
+}
+
 export interface SystemStatus {
   success: boolean;
   status?: {
@@ -189,7 +210,7 @@ class SmartSageBotAPI {
     message: string,
     creativity: 'conservative' | 'balanced' | 'innovative' = 'balanced',
     domain?: string
-  ): Promise<ChatResponse> {
+  ): Promise<SuggestionsResponse> {
     return this.makeRequest('/api/chat/suggest', {
       method: 'POST',
       body: JSON.stringify({

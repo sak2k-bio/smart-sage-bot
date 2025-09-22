@@ -62,13 +62,39 @@ Supporting Documents: ${(input.documents||[]).map((d:any)=>d.content).join('\n\n
 
 Refined Answer:`; let refined = input.answer; if(genAI){ try{ const model=genAI.getGenerativeModel({ model: GEMINI_MODEL, generationConfig:{ temperature: GEMINI_TEMPERATURE, maxOutputTokens: GEMINI_MAX_TOKENS } }); const result=await model.generateContent(refinementPrompt); const response=await result.response; refined = response.text(); }catch(e){ console.warn('Google Gemini failed for refinement:', e) } } else { try{ const response = await axios.post(`${OLLAMA_HOST}/api/generate`, { model:'gemma3:1b', prompt: refinementPrompt, stream:false }); refined = response.data.response }catch(e){ console.error('Ollama failed for refinement:', e) } } steps.push({agent:this.name,step:'Answer Refinement',status:'completed',message:'Answer refined successfully'}); return { refinedAnswer: refined, thinkingSteps: steps } } }
 
-export class QuizAgent extends BaseAgent { constructor(){super('QuizAgent')} async process(input:any){ const steps:any=[]; const context=(input.documents||[]).map((d:any)=>d.content).join('\n\n'); const prompt=`Based on the following context about "${input.topic}", generate ${input.questionCount||3} multiple choice questions with difficulty level: ${input.difficulty||'medium'}.
+export class QuizAgent extends BaseAgent { 
+  constructor(){super('QuizAgent')} 
+  async process(input:any){ 
+    const steps:any=[]; 
+    const docs = input.documents || [];
+    
+    // Split documents into chunks for different questions
+    const chunksPerQuestion = Math.ceil(docs.length / (input.questionCount || 5));
+    const documentChunks: any[][] = [];
+    
+    for (let i = 0; i < (input.questionCount || 5); i++) {
+      const start = i * chunksPerQuestion;
+      const end = Math.min(start + chunksPerQuestion, docs.length);
+      if (start < docs.length) {
+        documentChunks.push(docs.slice(start, end));
+      }
+    }
+    
+    console.log(`[QuizAgent] Creating ${input.questionCount||5} questions from ${docs.length} documents (${chunksPerQuestion} docs per question)`);
+    
+    // Join all context but emphasize variety
+    const context = docs.map((d:any, idx:number) => `[Document ${idx+1}]\n${d.content}`).join('\n\n'); 
+    
+    const prompt=`Based on the following context about "${input.topic}", generate exactly ${input.questionCount||5} DIVERSE multiple choice questions with difficulty level: ${input.difficulty||'medium'}.
+
+IMPORTANT: Each question MUST focus on DIFFERENT aspects or concepts from the context. Use information from different documents. DO NOT repeat similar questions or test the same concept multiple times.
 
 For each question, provide:
-1. A clear question
+1. A clear, unique question testing a different concept
 2. 4 multiple choice options (A, B, C, D)
-3. The correct answer (A, B, C, or D)
+3. The correct answer (0, 1, 2, or 3 for A, B, C, or D)
 4. A brief explanation of why the answer is correct
+5. Vary question types: factual, conceptual, application-based, etc.
 
 Format as JSON array with this structure:
 [
@@ -85,7 +111,33 @@ Format as JSON array with this structure:
 Context:
 ${context}
 
-JSON Response:`; if(genAI){ try{ const model=genAI.getGenerativeModel({ model: GEMINI_MODEL, generationConfig:{ temperature: 0.5, maxOutputTokens: GEMINI_MAX_TOKENS } }); const result=await model.generateContent(prompt); const text=(await result.response).text(); const m=text.match(/\[[\s\S]*\]/); if(m){ const questions=JSON.parse(m[0]).map((q:any,idx:number)=>({ id:`quiz_${Date.now()}_${idx}`, ...q, source: input.documents?.[0]?.metadata?.source || 'Generated from context' })); steps.push({agent:this.name,step:'Quiz Generation',status:'completed',message:`Generated ${questions.length} quiz questions`}); return { questions, thinkingSteps: steps } } }catch(e){ console.warn('Quiz generation with Gemini failed:', e) } } // fallback
+Generate ${input.questionCount||5} UNIQUE questions. JSON Response:`; 
+    
+    if(genAI){ 
+      try{ 
+        const model=genAI.getGenerativeModel({ 
+          model: GEMINI_MODEL, 
+          generationConfig:{ 
+            temperature: 0.8, // Higher temperature for more variety
+            maxOutputTokens: GEMINI_MAX_TOKENS 
+          } 
+        }); 
+        const result=await model.generateContent(prompt); 
+        const text=(await result.response).text(); 
+        const m=text.match(/\[[\s\S]*\]/); 
+        if(m){ 
+          const questions=JSON.parse(m[0]).map((q:any,idx:number)=>({ 
+            id:`quiz_${Date.now()}_${idx}_${Math.random().toString(36).substr(2,9)}`, 
+            ...q, 
+            source: docs[idx % docs.length]?.metadata?.source || 'Generated from context' 
+          })); 
+          steps.push({agent:this.name,step:'Quiz Generation',status:'completed',message:`Generated ${questions.length} diverse quiz questions`}); 
+          return { questions: questions.slice(0, input.questionCount || 5), thinkingSteps: steps } 
+        } 
+      }catch(e){ 
+        console.warn('Quiz generation with Gemini failed:', e) 
+      } 
+    } // fallback
  const fallback = Array.from({length: input.questionCount||3}).map((_,i)=>({ id:`fallback_${Date.now()}_${i}`, question:`What is an important concept related to ${input.topic}?`, options:["This is a concept from the provided context","This is not relevant to the topic","This is incorrect information","This is not mentioned in the context"], correctAnswer:0, explanation:`Based on the provided context about ${input.topic}, the first option represents concepts discussed in the source material.`, difficulty: input.difficulty||'medium', category: input.topic, source: input.documents?.[0]?.metadata?.source || 'Generated content' })); steps.push({agent:this.name,step:'Quiz Generation',status:'completed',message:`Generated ${fallback.length} fallback quiz questions`}); return { questions: fallback, thinkingSteps: steps } } }
 
 export class SuggestionsAgent extends BaseAgent {

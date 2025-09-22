@@ -11,7 +11,7 @@ import { TutorMessage } from './TutorMessage';
 import { SuggestionsPanel } from './SuggestionsPanel';
 import { ThinkingSteps } from './ThinkingSteps';
 import { DocumentSources } from './DocumentSources';
-import { sageBotAPI, isApiError, getErrorMessage, ThinkingStep, DocumentSource, PipelineMode, QuizQuestion, TutorSection } from '@/lib/api';
+import { sageBotAPI, isApiError, getErrorMessage, ThinkingStep, DocumentSource, PipelineMode, QuizQuestion, TutorSection, SuggestionsData } from '@/lib/api';
 // Using public asset path in Next.js
 const chatBgUrl = '/chat-bg.jpg';
 
@@ -32,6 +32,7 @@ interface Message {
   // Mode-specific payloads
   quizQuestions?: QuizQuestion[];
   tutorialSections?: TutorSection[];
+  suggestionsData?: SuggestionsData;
 }
 
 export const ChatInterface = () => {
@@ -141,6 +142,28 @@ export const ChatInterface = () => {
 
         toast({
           title: 'Tutorial generated',
+          description: result.pipelineInfo || 'RAG pipeline executed',
+          duration: 3000,
+        });
+      } else if (currentMode === 'suggestions') {
+        const result = await sageBotAPI.getSuggestions(messageContent, 'balanced');
+
+        setMessages(prev => prev.map(msg =>
+          msg.id === loadingMessageId ? {
+            ...msg,
+            content: result.success && result.suggestions
+              ? 'Here are some creative suggestions based on your query:'
+              : (result.error || 'Unable to generate suggestions.'),
+            suggestionsData: result.suggestions,
+            thinkingSteps: result.thinkingSteps,
+            sources: result.sources,
+            pipelineInfo: result.pipelineInfo,
+            isLoading: false,
+          } : msg
+        ));
+
+        toast({
+          title: 'Suggestions generated',
           description: result.pipelineInfo || 'RAG pipeline executed',
           duration: 3000,
         });
@@ -257,9 +280,24 @@ export const ChatInterface = () => {
     if (message.mode === 'suggestions' && !message.isUser && !message.isLoading) {
       return (
         <div key={message.id} className="mb-6">
-          <SuggestionsPanel content={message.content} />
-          {message.thinkingSteps && <ThinkingSteps steps={message.thinkingSteps} />}
-          {message.sources && <DocumentSources sources={message.sources} />}
+          <SuggestionsPanel 
+            content={message.content} 
+            suggestions={message.suggestionsData}
+          />
+          {message.thinkingSteps && (
+            <ThinkingSteps 
+              steps={message.thinkingSteps}
+              isVisible={expandedThinking.has(message.id)}
+              onToggle={() => toggleThinking(message.id)}
+            />
+          )}
+          {message.sources && (
+            <DocumentSources 
+              sources={message.sources}
+              isVisible={expandedSources.has(message.id)}
+              onToggle={() => toggleSources(message.id)}
+            />
+          )}
         </div>
       );
     }

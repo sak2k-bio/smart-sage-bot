@@ -12,39 +12,47 @@ interface QuizCardProps {
 }
 
 export const QuizCard = ({ content, questions }: QuizCardProps) => {
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [showResult, setShowResult] = useState(false);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
+  const [showResults, setShowResults] = useState<Record<string, boolean>>({});
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const { toast } = useToast();
 
-  // Prefer server-provided question when available; otherwise fallback to mock
-  const first = questions && questions.length > 0 ? questions[0] : null;
-  const quizData = first ? {
-    question: first.question,
-    options: first.options,
-    correctAnswer: first.correctAnswer,
-    explanation: first.explanation,
-  } : {
-    question: "What is the primary benefit of using RAG (Retrieval-Augmented Generation) in AI systems?",
-    options: [
-      "Faster processing speed",
-      "Improved accuracy with up-to-date information", 
-      "Reduced computational requirements",
-      "Better user interface design"
-    ],
-    correctAnswer: 1,
-    explanation: "RAG combines the power of pre-trained language models with real-time information retrieval, allowing AI systems to provide more accurate and current responses by accessing external knowledge bases."
+  // Use all questions or fallback to mock data
+  const quizQuestions = questions && questions.length > 0 ? questions : [
+    {
+      id: 'mock-1',
+      question: "What is the primary benefit of using RAG (Retrieval-Augmented Generation) in AI systems?",
+      options: [
+        "Faster processing speed",
+        "Improved accuracy with up-to-date information", 
+        "Reduced computational requirements",
+        "Better user interface design"
+      ],
+      correctAnswer: 1,
+      explanation: "RAG combines the power of pre-trained language models with real-time information retrieval, allowing AI systems to provide more accurate and current responses by accessing external knowledge bases.",
+      difficulty: 'medium' as const,
+      category: 'RAG Systems',
+      source: 'Mock Data'
+    }
+  ];
+
+  const currentQuestion = quizQuestions[currentQuestionIndex];
+  const totalQuestions = quizQuestions.length;
+
+  const handleAnswerSelect = (questionId: string, index: number) => {
+    if (showResults[questionId]) return;
+    setSelectedAnswers(prev => ({ ...prev, [questionId]: index }));
   };
 
-  const handleAnswerSelect = (index: number) => {
-    if (showResult) return;
-    setSelectedAnswer(index);
-  };
-
-  const handleSubmit = () => {
-    if (selectedAnswer === null) return;
+  const handleSubmit = (questionId: string) => {
+    const selected = selectedAnswers[questionId];
+    if (selected === undefined) return;
     
-    setShowResult(true);
-    const isCorrect = selectedAnswer === quizData.correctAnswer;
+    setShowResults(prev => ({ ...prev, [questionId]: true }));
+    const question = quizQuestions.find(q => q.id === questionId);
+    if (!question) return;
+    
+    const isCorrect = selected === question.correctAnswer;
     
     toast({
       title: isCorrect ? "Correct!" : "Not quite right",
@@ -53,39 +61,62 @@ export const QuizCard = ({ content, questions }: QuizCardProps) => {
     });
   };
 
+  const handleNext = () => {
+    if (currentQuestionIndex < totalQuestions - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
   const handleReset = () => {
-    setSelectedAnswer(null);
-    setShowResult(false);
+    setSelectedAnswers({});
+    setShowResults({});
+    setCurrentQuestionIndex(0);
   };
 
   return (
     <Card className="mb-4 p-6 bg-gradient-quiz/5 border-quiz-mode/20 shadow-chat">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-full bg-gradient-quiz flex items-center justify-center shadow-soft">
-          <Brain className="h-4 w-4 text-white" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-gradient-quiz flex items-center justify-center shadow-soft">
+            <Brain className="h-4 w-4 text-white" />
+          </div>
+          <Badge variant="secondary" className="bg-gradient-quiz text-white">
+            Quiz Mode
+          </Badge>
         </div>
-        <Badge variant="secondary" className="bg-gradient-quiz text-white">
-          Quiz Mode
-        </Badge>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Question {currentQuestionIndex + 1} of {totalQuestions}</span>
+        </div>
       </div>
 
       <div className="space-y-4">
-        <h3 className="font-medium text-foreground">{quizData.question}</h3>
+        <h3 className="font-medium text-foreground">{currentQuestion.question}</h3>
         
         <div className="space-y-2">
-          {quizData.options.map((option, index) => {
+          {currentQuestion.options.map((option, index) => {
+            const isSelected = selectedAnswers[currentQuestion.id] === index;
+            const isShowingResult = showResults[currentQuestion.id];
+            const isCorrect = index === currentQuestion.correctAnswer;
+            const isWrong = isSelected && !isCorrect;
+            
             let buttonClass = "w-full text-left p-4 rounded-lg border transition-smooth ";
             
-            if (showResult) {
-              if (index === quizData.correctAnswer) {
+            if (isShowingResult) {
+              if (isCorrect) {
                 buttonClass += "bg-green-50 border-green-200 text-green-800";
-              } else if (index === selectedAnswer && index !== quizData.correctAnswer) {
+              } else if (isWrong) {
                 buttonClass += "bg-red-50 border-red-200 text-red-800";
               } else {
                 buttonClass += "bg-muted/50 border-border text-muted-foreground";
               }
             } else {
-              buttonClass += selectedAnswer === index 
+              buttonClass += isSelected
                 ? "bg-quiz-mode/10 border-quiz-mode text-quiz-mode" 
                 : "bg-background border-border hover:bg-accent hover:border-accent-foreground/20";
             }
@@ -93,17 +124,17 @@ export const QuizCard = ({ content, questions }: QuizCardProps) => {
             return (
               <button
                 key={index}
-                onClick={() => handleAnswerSelect(index)}
+                onClick={() => handleAnswerSelect(currentQuestion.id, index)}
                 className={buttonClass}
-                disabled={showResult}
+                disabled={isShowingResult}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm">{option}</span>
-                  {showResult && (
+                  {isShowingResult && (
                     <div className="flex-shrink-0 ml-2">
-                      {index === quizData.correctAnswer ? (
+                      {isCorrect ? (
                         <CheckCircle className="h-4 w-4 text-green-600" />
-                      ) : index === selectedAnswer ? (
+                      ) : isWrong ? (
                         <XCircle className="h-4 w-4 text-red-600" />
                       ) : null}
                     </div>
