@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Brain, RotateCcw } from 'lucide-react';
+import { CheckCircle, XCircle, Brain, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import type { QuizQuestion } from '@/lib/api';
 
@@ -145,34 +145,76 @@ export const QuizCard = ({ content, questions }: QuizCardProps) => {
           })}
         </div>
 
-        {showResult && (
+        {showResults[currentQuestion.id] && (
           <Card className="p-4 bg-accent/50 border-accent">
             <h4 className="font-medium text-sm mb-2 text-accent-foreground">Explanation:</h4>
             <p className="text-sm text-accent-foreground/80 leading-relaxed">
-              {quizData.explanation}
+              {currentQuestion.explanation}
             </p>
           </Card>
         )}
 
-        <div className="flex gap-2 pt-2">
-          {!showResult ? (
-            <Button
-              onClick={handleSubmit}
-              disabled={selectedAnswer === null}
-              className="bg-gradient-quiz hover:opacity-90 transition-smooth"
-            >
-              Submit Answer
-            </Button>
-          ) : (
-            <Button
-              onClick={handleReset}
-              variant="outline"
-              className="border-quiz-mode text-quiz-mode hover:bg-quiz-mode/5"
-            >
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
-          )}
+        <div className="space-y-3">
+          {/* Submit/Navigation buttons */}
+          <div className="flex gap-2">
+            {!showResults[currentQuestion.id] ? (
+              <Button
+                onClick={() => handleSubmit(currentQuestion.id)}
+                disabled={selectedAnswers[currentQuestion.id] === undefined}
+                className="bg-gradient-quiz hover:opacity-90 transition-smooth"
+              >
+                Submit Answer
+              </Button>
+            ) : (
+              <>
+                {currentQuestionIndex > 0 && (
+                  <Button
+                    onClick={handlePrevious}
+                    variant="outline"
+                    className="border-quiz-mode text-quiz-mode hover:bg-quiz-mode/5"
+                  >
+                    Previous Question
+                  </Button>
+                )}
+                {currentQuestionIndex < totalQuestions - 1 && (
+                  <Button
+                    onClick={handleNext}
+                    className="bg-gradient-quiz hover:opacity-90 transition-smooth"
+                  >
+                    Next Question
+                  </Button>
+                )}
+                {currentQuestionIndex === totalQuestions - 1 && (
+                  <Button
+                    onClick={handleReset}
+                    variant="outline"
+                    className="border-quiz-mode text-quiz-mode hover:bg-quiz-mode/5"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Restart Quiz
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+          
+          {/* Progress indicator */}
+          <div className="flex justify-center gap-1">
+            {quizQuestions.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => showResults[quizQuestions[index].id] && setCurrentQuestionIndex(index)}
+                className={`w-2 h-2 rounded-full transition-smooth ${
+                  index === currentQuestionIndex
+                    ? 'bg-quiz-mode w-6'
+                    : showResults[quizQuestions[index].id]
+                    ? 'bg-quiz-mode/50 cursor-pointer hover:bg-quiz-mode/70'
+                    : 'bg-muted'
+                }`}
+                disabled={!showResults[quizQuestions[index].id] && index !== currentQuestionIndex}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </Card>

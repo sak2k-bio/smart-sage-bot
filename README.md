@@ -1,73 +1,198 @@
-# Welcome to your Lovable project
+# Smart Sage Bot - AI-Powered Learning Assistant
 
-## Project info
+🤖 An advanced RAG (Retrieval-Augmented Generation) system that provides intelligent tutoring, quiz generation, and creative suggestions based on your knowledge base.
 
-**URL**: https://lovable.dev/projects/c98bdc10-c648-4470-ae85-9d73ad760c72
+## 🌟 Features
 
-## How can I edit this code?
+### Three Intelligent Modes
 
-There are several ways of editing your application.
+#### 🧠 **Quiz Mode**
+- Generates 5 unique, diverse multiple-choice questions from your documents
+- Smart document shuffling ensures variety in each quiz session
+- Interactive navigation between questions
+- Instant feedback with detailed explanations
+- Progress tracking with visual indicators
+- Questions generated from different document sections for comprehensive coverage
 
-**Use Lovable**
+#### 📚 **Tutor Mode**
+- Creates structured tutorials with multiple sections
+- Content types: explanations, examples, exercises, and summaries
+- Strictly uses retrieved documents for accuracy
+- Adaptive to user's learning level
+- Shows source documents for each section
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c98bdc10-c648-4470-ae85-9d73ad760c72) and start prompting.
+#### 💡 **Suggestions Mode**
+- Generates creative ideas in three categories:
+  - Creative Applications
+  - Learning & Education
+  - Business Solutions
+- Context-aware suggestions based on your query
+- Includes pro tips for combining ideas
+- Dynamic content generation, not static placeholders
 
-Changes made via Lovable will be committed automatically to this repo.
+### Core RAG Features
 
-**Use your preferred IDE**
+- **Vector Search**: Powered by Qdrant Cloud with 3072-dimensional embeddings
+- **Multi-Agent Pipeline**: Query analysis → Document retrieval → Response generation
+- **Transparent AI Thinking**: Expandable panels showing AI reasoning steps
+- **Source Attribution**: Every response includes document sources
+- **Google Gemini Integration**: Uses gemini-1.5-flash for generation and gemini-embedding-001 for embeddings
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
 
-Follow these steps:
+- Node.js 18+ and npm
+- Google Cloud API key (for Gemini)
+- Qdrant Cloud account with a collection
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Installation
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/smart-sage-bot.git
+cd smart-sage-bot
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Create environment file
+cp .env.example .env
 ```
 
-**Edit a file directly in GitHub**
+### Configuration
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Edit `.env` with your credentials:
 
-**Use GitHub Codespaces**
+```env
+# Google Gemini Configuration
+GOOGLE_API_KEY=your-google-api-key
+GEMINI_MODEL=gemini-1.5-flash
+GEMINI_TEMPERATURE=0.7
+GEMINI_MAX_TOKENS=2048
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Qdrant Cloud Configuration
+QDRANT_CLOUD_URL=https://your-cluster-url.qdrant.io:6333
+QDRANT_CLOUD_API_KEY=your-qdrant-api-key
 
-## What technologies are used for this project?
+# Vector Store Configuration
+VECTOR_STORE=qdrant
+COLLECTION_NAME=your-collection-name
+EMBEDDING_MODEL=gemini-embedding-001
+EMBEDDING_DIM=3072
+```
 
-This project is built with:
+### Running the Application
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+# Development mode
+npm run dev
 
-## How can I deploy this project?
+# Production build
+npm run build
+npm run preview
+```
 
-Simply open [Lovable](https://lovable.dev/projects/c98bdc10-c648-4470-ae85-9d73ad760c72) and click on Share -> Publish.
+The application will be available at `http://localhost:3000`
 
-## Can I connect a custom domain to my Lovable project?
+## 🏗️ Architecture
 
-Yes, you can!
+### Frontend (Next.js + React)
+- `/src/components/` - React components
+  - `ChatInterface.tsx` - Main chat UI
+  - `QuizCard.tsx` - Quiz display with navigation
+  - `TutorMessage.tsx` - Tutorial content display
+  - `SuggestionsPanel.tsx` - Ideas and suggestions display
+  - `ThinkingSteps.tsx` - AI reasoning visualization
+  - `DocumentSources.tsx` - Source attribution display
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Backend (Next.js API Routes)
+- `/app/api/` - API endpoints
+  - `chat/` - General chat endpoint
+  - `quiz/generate` - Quiz generation
+  - `tutor/explain` - Tutorial generation
+  - `chat/suggest` - Suggestions generation
+  - `documents/` - Document management
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### AI Pipeline System
+- `/src/server/agents.ts` - Individual AI agents:
+  - `QueryAgent` - Analyzes user queries
+  - `RetrievalAgent` - Searches vector database
+  - `AnswerAgent` - Generates responses
+  - `QuizAgent` - Creates quiz questions
+  - `TutorAgent` - Builds tutorials
+  - `SuggestionsAgent` - Generates creative ideas
+
+- `/src/server/pipelines.ts` - Pipeline orchestration:
+  - `QuizPipeline` - Retrieves 15 docs, shuffles, generates 5 questions
+  - `TutorPipeline` - Retrieves 8 docs, creates structured tutorial
+  - `SuggestionsPipeline` - Retrieves 5 docs, generates categorized ideas
+
+### Vector Store Integration
+- `/src/server/vectorstore.ts` - Qdrant integration
+  - 3072-dimensional embeddings via Gemini
+  - Semantic search with similarity scoring
+  - Automatic collection management
+
+## 📝 Key Improvements Made
+
+1. **Fixed Qdrant Collection Access**
+   - Handles collection names with special characters (spaces)
+   - Proper authentication with Qdrant Cloud
+   - Robust error handling for vector searches
+
+2. **Enhanced Quiz Generation**
+   - Increased document retrieval from 10 to 15
+   - Random shuffling for question variety
+   - Higher temperature (0.8) for creative questions
+   - All 5 questions displayed with navigation
+
+3. **Implemented Real Suggestions**
+   - Dynamic content generation based on context
+   - Three actionable categories
+   - Pro tips for idea combination
+
+4. **Improved UI/UX**
+   - Collapsible panels for AI thinking and sources
+   - Progress indicators for quizzes
+   - Smooth animations and transitions
+   - Responsive design with Tailwind CSS
+
+## 🛠️ Technologies Used
+
+- **Frontend**: Next.js 14, React, TypeScript
+- **UI Components**: shadcn/ui, Tailwind CSS
+- **AI/LLM**: Google Gemini (gemini-1.5-flash)
+- **Embeddings**: Google Gemini (gemini-embedding-001)
+- **Vector Database**: Qdrant Cloud
+- **Icons**: Lucide React
+- **Animations**: Custom Tailwind animations
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **"NO SOURCES" error**
+   - Verify collection name matches exactly (including spaces)
+   - Check Qdrant Cloud connection credentials
+   - Ensure collection has documents with proper embeddings
+
+2. **Embedding dimension mismatch**
+   - Confirm EMBEDDING_DIM matches your Qdrant collection
+   - Verify gemini-embedding-001 outputDimensionality parameter
+
+3. **Quiz showing only 1 question**
+   - Update to latest code version
+   - Clear browser cache and restart dev server
+
+## 📄 License
+
+MIT License - feel free to use this project for your own learning applications!
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📧 Support
+
+For issues and questions, please open a GitHub issue.
