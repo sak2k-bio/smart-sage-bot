@@ -88,13 +88,82 @@ ${context}
 JSON Response:`; if(genAI){ try{ const model=genAI.getGenerativeModel({ model: GEMINI_MODEL, generationConfig:{ temperature: 0.5, maxOutputTokens: GEMINI_MAX_TOKENS } }); const result=await model.generateContent(prompt); const text=(await result.response).text(); const m=text.match(/\[[\s\S]*\]/); if(m){ const questions=JSON.parse(m[0]).map((q:any,idx:number)=>({ id:`quiz_${Date.now()}_${idx}`, ...q, source: input.documents?.[0]?.metadata?.source || 'Generated from context' })); steps.push({agent:this.name,step:'Quiz Generation',status:'completed',message:`Generated ${questions.length} quiz questions`}); return { questions, thinkingSteps: steps } } }catch(e){ console.warn('Quiz generation with Gemini failed:', e) } } // fallback
  const fallback = Array.from({length: input.questionCount||3}).map((_,i)=>({ id:`fallback_${Date.now()}_${i}`, question:`What is an important concept related to ${input.topic}?`, options:["This is a concept from the provided context","This is not relevant to the topic","This is incorrect information","This is not mentioned in the context"], correctAnswer:0, explanation:`Based on the provided context about ${input.topic}, the first option represents concepts discussed in the source material.`, difficulty: input.difficulty||'medium', category: input.topic, source: input.documents?.[0]?.metadata?.source || 'Generated content' })); steps.push({agent:this.name,step:'Quiz Generation',status:'completed',message:`Generated ${fallback.length} fallback quiz questions`}); return { questions: fallback, thinkingSteps: steps } } }
 
+export class SuggestionsAgent extends BaseAgent {
+  constructor(){super('SuggestionsAgent')}
+  async process(input:any){
+    const steps:any=[];
+    const topic = input.topic || input.query;
+    const context = (input.documents||[]).map((d:any)=>d.content).join('\n');
+    steps.push({agent:this.name,step:'Suggestions Generation',status:'processing',message:`Generating creative suggestions for: ${topic}`});
+    
+    const prompt = `Based on the topic "${topic}" and the following context, generate creative and practical suggestions organized into 3 categories:
+
+1. Creative Applications - innovative ways to apply this knowledge
+2. Learning & Education - educational applications and learning approaches  
+3. Business Solutions - practical business or professional applications
+
+For each category, provide exactly 3 specific, actionable suggestions that are relevant to the topic.
+
+${context ? `Context:\n${context}\n\n` : ''}
+
+Return as a JSON object with this structure:
+{
+  "creativeApplications": ["suggestion1", "suggestion2", "suggestion3"],
+  "learningEducation": ["suggestion1", "suggestion2", "suggestion3"],
+  "businessSolutions": ["suggestion1", "suggestion2", "suggestion3"],
+  "proTip": "A helpful tip about combining or applying these suggestions"
+}
+
+Only output valid JSON, nothing else.`;
+
+    try {
+      if (genAI) {
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL, generationConfig: { temperature: 0.8, maxOutputTokens: GEMINI_MAX_TOKENS } });
+        const result = await model.generateContent(prompt);
+        const text = (await result.response).text();
+        const match = text.match(/\{[\s\S]*\}/);
+        if (match) {
+          const suggestions = JSON.parse(match[0]);
+          steps.push({agent:this.name,step:'Suggestions Generation',status:'completed',message:`Generated suggestions for all categories`});
+          return { suggestions, thinkingSteps: steps };
+        }
+      }
+    } catch (e) {
+      console.warn('Suggestions generation failed:', e);
+    }
+    
+    // Fallback suggestions
+    const fallbackSuggestions = {
+      creativeApplications: [
+        `Build an interactive ${topic} visualization tool`,
+        `Create a ${topic}-based creative writing assistant`,
+        `Develop a gamified ${topic} learning experience`
+      ],
+      learningEducation: [
+        `Design a ${topic} study guide with practice questions`,
+        `Create flashcards for key ${topic} concepts`,
+        `Build a ${topic} tutorial series for beginners`
+      ],
+      businessSolutions: [
+        `Develop a ${topic} analysis tool for professionals`,
+        `Create a ${topic} consulting framework`,
+        `Build a ${topic} knowledge base for teams`
+      ],
+      proTip: `Combine elements from different categories to create unique solutions tailored to specific needs.`
+    };
+    
+    steps.push({agent:this.name,step:'Suggestions Generation',status:'completed',message:`Generated fallback suggestions`});
+    return { suggestions: fallbackSuggestions, thinkingSteps: steps };
+  }
+}
+
 export class TutorAgent extends BaseAgent { constructor(){super('TutorAgent')} async process(input:any){ const steps:any=[]; const docs=(input.documents||[]);
   steps.push({agent:this.name,step:'Tutor Planning',status:'processing',message:`Creating a structured tutorial for: ${input.topic}`});
   const context = docs.map((d:any)=>`- ${d.content}`).join('\n');
   const jsonSpec = `Return JSON array with objects: { id: string, title: string, content: string, type: 'explanation' | 'example' | 'exercise' | 'summary' }`;
-  const prompt = `You are a patient, expert tutor. Create a short tutorial about "${input.topic}" using the context below. The tutorial should include 3-5 sections (mix of explanation, example, exercise, and a brief summary). Keep content concise but meaningful.
+  const prompt = `You are a patient, expert tutor. Create a short tutorial about "${input.topic}" using ONLY the information from the context below. DO NOT use any external knowledge - base everything strictly on the provided documents. If the context doesn't contain enough information, acknowledge this limitation. The tutorial should include 3-5 sections (mix of explanation, example, exercise, and a brief summary). Keep content concise but meaningful.
 
-Context (may be empty):\n${context}\n\n${jsonSpec}\nOnly output valid JSON array, nothing else.`;
+Context from retrieved documents:\n${context}\n\n${jsonSpec}\nOnly output valid JSON array, nothing else.`;
   try {
     if (genAI) {
       const model = genAI.getGenerativeModel({ model: GEMINI_MODEL, generationConfig: { temperature: 0.6, maxOutputTokens: GEMINI_MAX_TOKENS } });
