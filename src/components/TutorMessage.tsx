@@ -3,42 +3,53 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BookOpen, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
+import type { TutorSection } from '@/lib/api';
 
 interface TutorMessageProps {
   content: string;
+  sections?: TutorSection[];
 }
 
-export const TutorMessage = ({ content }: TutorMessageProps) => {
+export const TutorMessage = ({ content, sections }: TutorMessageProps) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']));
 
-  const tutorData = {
-    overview: {
-      title: "Overview",
-      content: "RAG (Retrieval-Augmented Generation) is an advanced AI architecture that combines the strengths of large language models with external knowledge retrieval systems."
-    },
-    keyPoints: {
-      title: "Key Concepts",
-      points: [
-        "Retrieval Component: Searches through external knowledge bases",
-        "Generation Component: Uses retrieved information to create responses", 
-        "Dynamic Knowledge: Can access up-to-date information beyond training data",
-        "Contextual Accuracy: Provides more precise and relevant answers"
-      ]
-    },
-    examples: {
-      title: "Real-World Applications",
-      content: "RAG is used in customer support chatbots, research assistants, and educational platforms where current, accurate information is crucial for quality responses."
-    },
-    nextSteps: {
-      title: "Learning Path",
-      steps: [
-        "Understanding vector databases and embeddings",
-        "Learning about information retrieval techniques", 
-        "Exploring different RAG architectures",
-        "Implementing RAG systems with modern frameworks"
-      ]
-    }
-  };
+  // Build content from server sections when available; otherwise use fallback
+  const tutorData = sections && sections.length > 0 ?
+    sections.reduce((acc: any, s, idx) => {
+      acc[s.id || `section_${idx}`] = {
+        title: s.title,
+        content: s.content,
+      };
+      return acc;
+    }, {} as Record<string, any>)
+    : {
+      overview: {
+        title: "Overview",
+        content: "RAG (Retrieval-Augmented Generation) is an advanced AI architecture that combines the strengths of large language models with external knowledge retrieval systems."
+      },
+      keyPoints: {
+        title: "Key Concepts",
+        points: [
+          "Retrieval Component: Searches through external knowledge bases",
+          "Generation Component: Uses retrieved information to create responses", 
+          "Dynamic Knowledge: Can access up-to-date information beyond training data",
+          "Contextual Accuracy: Provides more precise and relevant answers"
+        ]
+      },
+      examples: {
+        title: "Real-World Applications",
+        content: "RAG is used in customer support chatbots, research assistants, and educational platforms where current, accurate information is crucial for quality responses."
+      },
+      nextSteps: {
+        title: "Learning Path",
+        steps: [
+          "Understanding vector databases and embeddings",
+          "Learning about information retrieval techniques", 
+          "Exploring different RAG architectures",
+          "Implementing RAG systems with modern frameworks"
+        ]
+      }
+    };
 
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections);
